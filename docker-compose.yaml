@@ -1,0 +1,30 @@
+services:
+  tabbyapi:
+    image: ghcr.io/theroyallab/tabbyapi:cu13
+    container_name: tabbyapi-qwen38
+    restart: unless-stopped
+    shm_size: "8gb"
+    ports:
+      - "8080:8080"
+    environment:
+      - CUDA_VISIBLE_DEVICES=1,0
+      - PYTHONUNBUFFERED=1
+      - PYTORCH_ALLOC_CONF=expandable_segments:True
+      - NCCL_DEBUG=INFO
+      - TORCH_CUDA_ARCH_LIST=8.6
+      - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    ulimits:
+      memlock: -1
+    volumes:
+      - ./cache:/app/cache
+      - ./models:/app/models
+      - ./config-qwen38.yml:/app/config.yml
+      - ./logs:/app/logs
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

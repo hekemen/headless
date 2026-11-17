@@ -1,0 +1,60 @@
+network:
+  host: 0.0.0.0
+  port: 8080
+  disable_auth: true
+
+model:
+  model_dir: models
+  #model_name: Qwen3.8-27B-EXL3
+  model_name: gemma-4-26B-A4B-it-exl3 
+  max_seq_len: 131072
+  cache_size: 131072
+  cache_mode: Q8              # Quantized KV cache saving substantial VRAM per session
+  
+  # 👇 CRITICAL FOR 4 SESSIONS: Enables true simultaneous execution without queuing
+  max_batch_size: 1
+  chunk_size: 4096            # Excellent value for processing large OpenCode context drops fast
+  chunked_prefill: true  
+  gpu_split_auto: true               
+  autosplit_reserve: [800, 0]  
+
+  # 👇 2. TURN ON NATIVE TENSOR PARALLELISM
+  tensor_parallel: true
+  tensor_parallel_backend: nccl
+  fasttensors: true
+
+  vision: false 
+  vision_offload: false        # Changed to true: Offloads heavy vision layers to free up pure LLM generation VRAM
+
+  # Disable the reasoning parser from extracting structural keys
+  reasoning: true
+
+    # 2. Set tool format strictly to match the gemma4 architecture
+  tool_format: gemma4
+
+  # 3. Force the streaming output structure to use standard chat fields
+  reasoning_output_format: "openai"
+
+  template_vars_force:
+    enable_thinking: true
+    reasoning_effort: "medium"
+  
+#sysmem_kv_cache: 16384
+
+draft_model:
+  draft_mode: disabled             # Native Qwen Multi-Token Prediction 
+  draft_tokens: 2            # Sweet spot for token speedups without execution overhead
+  draft_cache_mode: Q8
+
+sampling:
+  override_preset: null
+  temperature:
+    override: 0.2
+    force: true       
+  top_p:
+    override: 0.95
+  min_p:
+    override: 0.08
+  top_k:
+    override: 40
+

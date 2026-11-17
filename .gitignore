@@ -1,0 +1,11 @@
+# Virtual environment
+venv/
+
+# Model weights, HF cache, and logs
+cache/
+models/
+logs/
+
+# Python
+__pycache__/
+*.pyc
