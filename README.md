@@ -65,6 +65,15 @@ docker compose up -d
 
 `overclock.py` applies per-GPU profiles and exits (no keep-alive loop): persistence mode, locked core clocks, VRAM VF-curve offset, power caps, and a forced fan profile for the hot sandwiched card. Locked state persists until a driver reset (reboot, `nvidia-smi -rgc -rmc -rac`).
 
+Current state (from `nvidia-smi`, profile applied):
+
+| GPU | Core clock | Memory clock | Power draw / limit | Temp |
+|-----|-----------|--------------|--------------------|------|
+| 0 | 1800 MHz (locked, max boost 2160) | 8201 MHz (max 8401) | 99.6 W / 200 W | 60 °C |
+| 1 | 1800 MHz (locked, max boost 2160) | 8201 MHz (max 8401) | 102.7 W / 200 W | 56 °C |
+
+Both cards run with persistence mode enabled. Stock memory clock is ~7301 MHz; the +900 MHz VF-curve offset in `overclock.py` takes it to 8201 MHz.
+
 ## Performance
 
 Figures below are from the container logs (`logs/`, Nov 2026) under a real opencode agent workload — 45k–74k-token prompts with 98–100% prompt-cache hits, not a synthetic benchmark.
