@@ -1,5 +1,4 @@
 import sys
-import time
 import subprocess
 from pynvml import *
 
@@ -57,7 +56,7 @@ def apply_optimized_cluster_tuning():
                 try:
                     # Clear restrictive cooling control knobs if driver locks them
                     try:
-                        nvmlDeviceSetDefaultFanSpeed_v2(handle, 0) 
+                        nvmlDeviceSetDefaultFanSpeed_v2(handle, 0)
                     except:
                         pass
                     # Overriding the knob controls fan index 0 directly via nvml
@@ -66,6 +65,7 @@ def apply_optimized_cluster_tuning():
                 except Exception as fan_err:
                     print(f" -> Fan Override warning: {fan_err} (Driver or hardware policy locked control)")
 
+        nvmlShutdown()
         print("\n🚀 [SUCCESS] Asymmetric hardware cluster optimization complete and locked.")
         return True
     except Exception as err:
@@ -73,40 +73,6 @@ def apply_optimized_cluster_tuning():
         print("Please ensure this script is executed with root/sudo privileges.")
         return False
 
-def reset_cluster_to_default():
-    """
-    Safely releases performance states and returns fans to auto-control when script ends.
-    """
-    try:
-        nvmlInit()
-        device_count = nvmlDeviceGetCount()
-        print("\n🤖 Reverting cluster to low-power idle states and auto cooling...")
-        for i in range(device_count):
-            handle = nvmlDeviceGetHandleByIndex(i)
-            nvmlDeviceClearGpuLockedClocks(handle)
-            try:
-                nvmlDeviceSetMemClkVfOffset(handle, 0)
-            except:
-                pass
-            try:
-                # Setting fan knob back to default state
-                nvmlDeviceSetFanSpeedKnob(handle, 0) 
-            except:
-                pass
-        nvmlShutdown()
-        print("[+] Cluster successfully reset to default factory profiles.")
-    except Exception as e:
-        print(f"[-] Reset failed: {e}")
-
 if __name__ == "__main__":
     success = apply_optimized_cluster_tuning()
-    
-    if success:
-        print("\n📌 Optimal states locked. Keep this window open during ExLlamaV3 runtime.")
-        print("Press CTRL+C to terminate and gracefully reset your cluster layout.")
-        try:
-            while True:
-                time.sleep(1)
-        except KeyboardInterrupt:
-            reset_cluster_to_default()
-
+    sys.exit(0 if success else 1)
