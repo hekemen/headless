@@ -24,6 +24,7 @@ The two GPUs sit behind separate PCIe host bridges (`nvidia-smi topo -m` shows `
 | [code-server](https://github.com/coder/code-server) | VS Code in the browser — the admin console for this box. Systemd service (`code-server@hekemen.service`), port **8088** | <https://github.com/coder/code-server> |
 | ExLlamaV3 | Model format + kernels. Models live in `models/` (EXL3 quants) | <https://github.com/turboderp/exllamav3> |
 | [gpu-unlock](https://github.com/Zagitta/gpu-unlock) | DKMS kernel module that unlocks full-speed tensor cores on GeForce cards (see below) | <https://github.com/Zagitta/gpu-unlock> |
+| [opencode](https://opencode.ai) | Terminal AI coding agent — the primary client of this API. The agent traffic in `logs/` (140k+ completions over 30 days) is opencode sessions talking to TabbyAPI | <https://github.com/sst/opencode> |
 
 ## Configuration
 
@@ -63,6 +64,23 @@ docker compose up -d
 ```
 
 `overclock.py` applies per-GPU profiles and exits (no keep-alive loop): persistence mode, locked core clocks, VRAM VF-curve offset, power caps, and a forced fan profile for the hot sandwiched card. Locked state persists until a driver reset (reboot, `nvidia-smi -rgc -rmc -rac`).
+
+## Performance
+
+Figures below are from the container logs (`logs/`, Nov 2026) under a real opencode agent workload — 45k–74k-token prompts with 98–100% prompt-cache hits, not a synthetic benchmark.
+
+| Metric | Value |
+|--------|-------|
+| Model load | 19.4 s (tensor-parallel across both GPUs, 67 modules) |
+| Generation | 22–43 tok/s per request |
+| Prompt processing (prefill) | 264–383 tok/s on new tokens |
+| Time to first token | 0.96–4.5 s (45k–74k token prompts, mostly cached) |
+| Prompt cache hit rate | 98–100% (disk cache, 150 GB pool in `cache/`) |
+| Speculative draft acceptance | 50–81% (MTP + 16-token hybrid drafting) |
+| Errors | 0 in the most recent log |
+| Traffic | ~142k `chat/completions` requests over 30 days |
+
+Stack details: ExLlamaV3 1.6.7 with MTP speculative decoding, `cudaMallocAsync` backend, FP16 recurrent state. Throughput varies with prompt size and concurrent sessions — a micro-benchmark run while other sessions were active measured ~17 tok/s, so expect the table's range under normal agent load and less under contention.
 
 ## NVIDIA P2P & gpu-unlock
 
